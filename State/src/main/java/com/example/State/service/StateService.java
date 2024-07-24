@@ -7,6 +7,7 @@ import com.example.State.repo.StateRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
@@ -27,17 +28,40 @@ public class StateService {
     public State getStatebyStateid(String statecode) {
         return sr.findByStatecode(statecode).orElse(null);
     }
+//    <-----------------WEB_CLIENT--------------------->
+//    public Response getStateDistrict(String statecode){
+//        Response result = new Response();
+//        State statedata = sr.findByStatecode(statecode).orElse(null);;
+//        List<District> alldist = wbclient.get()
+//                .uri("http://localhost:8081/District/getDistrict/" + statedata.getStatecode())
+//                .retrieve()
+//                .bodyToMono(new ParameterizedTypeReference<List<District>>() {}).block();
+//        result.setDistricts(alldist);
+//        result.setName(statedata.getName());
+//        result.setStatecode(statedata.getStatecode());
+//        return result;
+//    }
 
-    public Response getStateDistrict(String statecode){
-        Response result = new Response();
-        State statedata = sr.findByStatecode(statecode).orElse(null);;
-        List<District> alldist = wbclient.get()
-                .uri("http://localhost:8081/District/getDistrict/" + statedata.getStatecode())
-                .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<List<District>>() {}).block();
-        result.setDistricts(alldist);
-        result.setName(statedata.getName());
-        result.setStatecode(statedata.getStatecode());
-        return result;
+//    <---------------REST_TEMPLATE------------------->
+@Autowired
+private RestTemplate restTemplate;
+public Response getStateDistrict(String stateCode) {
+    Response result = new Response();
+    State stateData = sr.findByStatecode(stateCode).orElse(null);
+
+    if (stateData != null) {
+        String url = "http://localhost:8081/District/getDistrict/" + stateData.getStatecode();
+
+        List<District> allDistricts = restTemplate.getForObject(
+                url,
+                List.class // Assuming the response is a JSON array of District objects
+        );
+
+        result.setDistricts(allDistricts);
+        result.setName(stateData.getName());
+        result.setStatecode(stateData.getStatecode());
     }
+
+    return result;
+}
 }
